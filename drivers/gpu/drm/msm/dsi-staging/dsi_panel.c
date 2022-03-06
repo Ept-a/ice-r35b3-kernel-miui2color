@@ -4666,7 +4666,7 @@ int dsi_panel_set_lp1(struct dsi_panel *panel)
 		       panel->name, rc);
 
 	panel->need_power_on_backlight = true;
-	chen_power_status = 1; //DISPLAY_POWER_DOZE
+	chen_power_status = 3; //DISPLAY_POWER_DOZE
 exit:
 	mutex_unlock(&panel->panel_lock);
 	return rc;
@@ -5065,7 +5065,8 @@ int dsi_panel_post_switch(struct dsi_panel *panel)
 	mutex_unlock(&panel->panel_lock);
 	return rc;
 }
-
+extern bool oneplus_dimlayer_hbm_enable;
+bool dimlayer_hbm_enable_backup;
 int dsi_panel_enable(struct dsi_panel *panel)
 {
 	int rc = 0;
@@ -5117,6 +5118,7 @@ int dsi_panel_enable(struct dsi_panel *panel)
 		rc = dsi_panel_set_aod_mode(panel, 0);
 		panel->aod_status = 0;
 	}
+	//oneplus_dimlayer_hbm_enable = dimlayer_hbm_enable_backup;
 
 	blank = MSM_DRM_BLANK_UNBLANK_CHARGE;
 	notifier_data.data = &blank;
@@ -5188,7 +5190,10 @@ int dsi_panel_disable(struct dsi_panel *panel)
 
 	/* Avoid sending panel off commands when ESD recovery is underway */
 	if (!atomic_read(&panel->esd_recovery_pending)) {
+		//dimlayer_hbm_enable_backup = oneplus_dimlayer_hbm_enable;
+		//oneplus_dimlayer_hbm_enable = false;
 		HBM_flag = false;
+		pr_err("turn off dimlayer_hbm when panel disabled");
 		if (panel->aod_mode == 2)
 			panel->aod_status = 1;
 		if (panel->aod_mode == 0)
@@ -5219,7 +5224,7 @@ int dsi_panel_disable(struct dsi_panel *panel)
 	panel->panel_initialized = false;
 	panel->power_mode = SDE_MODE_DPMS_OFF;
 
-	chen_power_status = 0; //OPPO_DISPLAY_POWER_ON
+	chen_power_status = 0; //DISPLAY_POWER_OFF
 	mutex_unlock(&panel->panel_lock);
 	printk(KERN_ERR"dsi_panel_disable --\n");
 	return rc;
